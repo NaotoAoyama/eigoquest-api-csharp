@@ -4,43 +4,35 @@ namespace EigoQuest.Api.Models
 {
     public class Question
     {
-        // models.BigAutoField -> long Id
-        // C#の規約で 'Id' という名前のプロパティは自動的に主キー(PK)として認識されます。
         public long Id { get; set; }
 
-        // models.TextField -> string
-        [Required] // NOT NULL制約
-        public string QuestionText { get; set; }
-
-        // models.CharField -> string
         [Required]
-        public string OptionA { get; set; }
-        [Required]
-        public string OptionB { get; set; }
-        [Required]
-        public string OptionC { get; set; }
-        [Required]
-        public string OptionD { get; set; }
+        public string QuestionText { get; set; } = string.Empty; // 修正
 
         [Required]
-        public string CorrectAnswer { get; set; }
+        public string OptionA { get; set; } = string.Empty; // 修正
 
-        // models.TextField(blank=True, null=True) -> string?
-        // 'string?' と '?' を付けることで、nullを許容する型になります。
+        [Required]
+        public string OptionB { get; set; } = string.Empty; // 修正
+
+        [Required]
+        public string OptionC { get; set; } = string.Empty; // 修正 (警告の箇所)
+
+        [Required]
+        public string OptionD { get; set; } = string.Empty; // 修正
+
+        [Required]
+        public string CorrectAnswer { get; set; } = string.Empty; // 修正
+
+        // Explanationは 'string?' なので null 許容。修正不要。
         public string? Explanation { get; set; }
 
-        // default='PART5' -> プロパティの初期値として設定
+        // Part は初期値があるので修正不要
         public string Part { get; set; } = "PART5";
 
-        // default=600 -> プロパティの初期値として設定
+        // その他（int, DateTime）も初期値があるので修正不要
         public int DifficultyLevel { get; set; } = 600;
-
-        // auto_now_add=True -> DateTime型にし、デフォルト値を設定
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-        // auto_now=True -> DateTime型にし、デフォルト値を設定
-        // (auto_nowはDB保存時に自動更新するロジックが別途必要ですが、
-        //  モデル定義としてはこれでOKです)
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     }
 }
