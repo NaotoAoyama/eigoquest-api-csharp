@@ -1,0 +1,13 @@
+# C# / .NET Core 用の .gitignore
+
+## ビルド成果物 ##
+[Bb]in/
+[Oo]bj/
+
+## ユーザー固有の設定ファイル ##
+*.user
+*.suo
+.vs/
+
+## macOS ##
+.DS_Store

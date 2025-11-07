@@ -1,0 +1,6 @@
+@EigoQuest.Api_HostAddress = http://localhost:5033
+
+GET {{EigoQuest.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
