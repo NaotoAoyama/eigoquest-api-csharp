@@ -84,7 +84,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 
 // 2a. CORSミドルウェアを有効化
 // 'corsheaders.middleware.CorsMiddleware' の換装
@@ -101,5 +101,76 @@ app.UseAuthorization();
 // これが 'Controllers' フォルダ内のAPIを自動的にURLにマッピングします
 app.MapControllers();
 
+// アプリケーション起動時にDBにデータを投入する (Django: import_questions の代替)
+SeedDatabase(app);
+
 // サーバー起動
 app.Run();
+
+
+static void SeedDatabase(IHost app)
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<EigoQuest.Api.Data.ApplicationDbContext>();
+        
+        if (dbContext.Questions.Any())
+        {
+            Console.WriteLine("Question data already exists. Skipping seed.");
+            return;
+        }
+
+        Console.WriteLine("Seeding database from eng_questions.csv ...");
+        var csvFilePath = "eng_questions.csv";
+
+        try
+        {
+            var lines = File.ReadAllLines(csvFilePath).Skip(1); // ヘッダーをスキップ
+            var questionsToImport = new List<EigoQuest.Api.Models.Question>();
+
+            foreach (var line in lines)
+            {
+                // CSVの最後のカンマを2つ見つけて、difficulty_level と part を分離する
+                int lastComma = line.LastIndexOf(',');
+                if (lastComma == -1) continue;
+                string difficultyLevelStr = line.Substring(lastComma + 1);
+
+                string remainingAfterDiff = line.Substring(0, lastComma);
+                int secondLastComma = remainingAfterDiff.LastIndexOf(',');
+                if (secondLastComma == -1) continue;
+                string partStr = remainingAfterDiff.Substring(secondLastComma + 1).Trim('"'); // "PART5"
+                
+                // 残りの部分（引用符で囲まれたフィールド）
+                string quotedFieldsStr = remainingAfterDiff.Substring(0, secondLastComma);
+
+                // 引用符区切りで分割（`"field1","field2",...`）
+                var quotedColumns = quotedFieldsStr.Split("\",\"");
+                if (quotedColumns.Length < 7) continue;
+
+                var question = new EigoQuest.Api.Models.Question
+                {
+                    // `` タグと `\n` をクリーンアップし、前後の `"` を削除
+                    QuestionText = quotedColumns[0].Trim('"').Replace("\n", " "),
+                    OptionA = quotedColumns[1].Trim('"'),
+                    OptionB = quotedColumns[2].Trim('"'),
+                    OptionC = quotedColumns[3].Trim('"'),
+                    OptionD = quotedColumns[4].Trim('"'),
+                    CorrectAnswer = quotedColumns[5].Trim('"'),
+                    Explanation = quotedColumns[6].Trim('"').Replace("\n", " "),
+                    Part = partStr,
+                    DifficultyLevel = int.Parse(difficultyLevelStr)
+                };
+                questionsToImport.Add(question);
+            }
+
+            dbContext.Questions.AddRange(questionsToImport);
+            dbContext.SaveChanges();
+            Console.WriteLine($"Successfully imported {questionsToImport.Count} questions.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error seeding database: {ex.Message}");
+            Console.WriteLine("CSVの解析に失敗しました。eng_questions.csv内の改行や \" (ダブルクォート) が不正でないか確認してください。");
+        }
+    }
+}
